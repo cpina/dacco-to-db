@@ -9,7 +9,7 @@ git clone git@github.com:cpina/dacco-to-db.git
 cd dacco-to-db/
 python3 -m virtualenv venv
 . venv/bin/activate
-python3 -m pip3 install requirements.txt
+python3 -m pip install -r requirements.txt
 python3 main.py
 
 # See the result:
