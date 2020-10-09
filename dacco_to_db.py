@@ -10,7 +10,6 @@ import xml.etree.ElementTree as ET
 import sqlalchemy
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.sql import select
 
 Base = declarative_base()
 
@@ -20,12 +19,14 @@ class Entry(Base):
 
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
 
-    word = sqlalchemy.Column(sqlalchemy.String)
-    # translation = sqlalchemy.Column(sqlalchemy.String)
+    entry = sqlalchemy.Column(sqlalchemy.String)
+
+    # Original file is used to reconstruct the files. Some entries like "a continuació" are in "c.dic" not "a.dic"
+    original_file = sqlalchemy.Column(sqlalchemy.String)
     xml = sqlalchemy.Column(sqlalchemy.Text)
 
     def __str__(self):
-        return f'{self.word}'
+        return f'{self.entry}'
 
 
 def create_database_session():
@@ -50,7 +51,8 @@ def dacco_file_to_db(file_path, db_session):
 
     for element in tree.findall('.//Entry'):
         xml = ET.tostring(element, encoding='utf-8').decode('utf-8')
-        entry = Entry(word=element.text, xml=xml)
+        original_file = file_path.split('/')[-1]
+        entry = Entry(entry=element.text, original_file=original_file, xml=xml)
         db_session.add(entry)
 
         # for translation in element.findall('.//translation'):
@@ -64,12 +66,8 @@ def dacco_directory_to_db(directory, session):
         dacco_file_to_db(file, session)
 
 
-def generate_output(output_directory, letter, session):
-    s = select([Entry])
-    result = session.execute(s)
-
-    os.makedirs(output_directory, exist_ok=True)
-
+def generate_output_for_letter(output_directory, letter, session):
+    result = session.query(Entry).filter(Entry.original_file.ilike(f'{letter}.dic')).order_by(Entry.id)
     file_name = f'{letter}.dic'
     with open(os.path.join(output_directory, file_name), 'w') as f:
         if file_name == 'a.dic':
@@ -86,13 +84,21 @@ def generate_output(output_directory, letter, session):
         f.write('</dictionary>')
 
 
+def generate_output(output_directory, session):
+    os.makedirs(output_directory, exist_ok=True)
+
+    for letter in string.ascii_lowercase:
+        generate_output_for_letter('/tmp/cateng', letter, session)
+
+
 def main():
     session = create_database_session()
     output_directory = '/tmp/cateng'
 
     for letter in string.ascii_lowercase:
         dacco_file_to_db(f'/usr/share/dacco-common/dictionaries/cateng/{letter}.dic', session)
-        generate_output(output_directory, letter, session)
+
+    generate_output(output_directory, session)
 
     print('See sqlite file in dacco.db')
     print(f'See output of XMLs after the SQL in {output_directory}')
@@ -161,6 +167,7 @@ def compare_xml_files(file1, file2):
         print(f'vimdiff {tempfile1.name} {tempfile2.name}')
 
         return False
+
 
 if __name__ == '__main__':
     main()
