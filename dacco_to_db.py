@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 import glob
 import os
-import shutil
 import string
-import subprocess
-import tempfile
 import xml.etree.ElementTree as ET
 
 import sqlalchemy
@@ -103,70 +100,6 @@ def main():
     print('See sqlite file in dacco.db')
     print(f'See output of XMLs after the SQL in {output_directory}')
     print('Execute unit test with python3 test_dacco-to-db.py')
-
-
-def canonical_xml(file1):
-    with subprocess.Popen(['xsec-c14n', '-n', file1], stdout=subprocess.PIPE) as proc:
-        canonicalized = proc.stdout.read()
-        canonicalized = canonicalized.decode('utf-8')
-
-        # For some reason the canonicalizatio process is not fixing these differences (!)
-        canonicalized = canonicalized.replace('     <Entry frequency="101">babaganuix<nouns>',
-                                              '<Entry frequency="101">babaganuix<nouns>')
-
-        canonicalized = canonicalized.replace('    <Entry frequency="2780">dacsa<nouns>',
-                                              '<Entry frequency="2780">dacsa<nouns>')
-
-        canonicalized = canonicalized.replace('    <Entry frequency="2040">eben<nouns>',
-                                              '<Entry frequency="2040">eben<nouns>')
-
-        canonicalized = canonicalized.replace('    <Entry frequency="71200">laberint<nouns>',
-                                              '<Entry frequency="71200">laberint<nouns>')
-
-        canonicalized = canonicalized.replace(' <Entry frequency="218">nabiu<nouns>',
-                                              '<Entry frequency="218">nabiu<nouns>')
-
-        canonicalized = canonicalized.replace('     <Entry frequency="199">qatarià<nouns>',
-                                              '<Entry frequency="199">qatarià<nouns>')
-
-        canonicalized = canonicalized.replace('  <Entry frequency="24400">tabac<nouns>',
-                                              '<Entry frequency="24400">tabac<nouns>')
-
-        canonicalized = canonicalized.replace('        <Entry frequency="154">xacal<nouns>',
-                                              '<Entry frequency="154">xacal<nouns>')
-
-        canonicalized = canonicalized.replace('''<dictionary>
-	
-</dictionary>
-''', '''<dictionary>\n</dictionary>\n''')
-
-        canonicalized = canonicalized.replace('\t<Entry frequency="',
-                                              '<Entry frequency="')
-
-        return canonicalized
-
-
-def compare_xml_files(file1, file2):
-    shutil.copy('/usr/share/dacco-common/dictionaries/cateng/dic.dtd', '/tmp/cateng')
-    canonical_xml_file1 = canonical_xml(file1)
-    canonical_xml_file2 = canonical_xml(file2)
-
-    same_result = (canonical_xml_file1 == canonical_xml_file2)
-    if same_result:
-        return True
-    else:
-        tempfile1 = tempfile.NamedTemporaryFile(delete=False, suffix=file1.replace('/', '_'), mode='w')
-        tempfile2 = tempfile.NamedTemporaryFile(delete=False, suffix=file2.replace('/', '_'), mode='w')
-
-        tempfile1.write(canonical_xml_file1)
-        tempfile2.write(canonical_xml_file2)
-
-        print('files are not the same. Compare the canonicalized files:')
-        print(tempfile1.name)
-        print(tempfile2.name)
-        print(f'vimdiff {tempfile1.name} {tempfile2.name}')
-
-        return False
 
 
 if __name__ == '__main__':
