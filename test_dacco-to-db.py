@@ -14,7 +14,7 @@ class TestDacco_to_db(unittest.TestCase):
         file_name = f'{letter}.dic'
         dacco_to_db.dacco_file_to_db(f'/usr/share/dacco-common/dictionaries/cateng/{file_name}', session)
 
-        dacco_to_db.generate_output('/tmp/cateng', file_name, session)
+        dacco_to_db.generate_output('/tmp/cateng', letter, session)
 
         self.assertTrue(dacco_to_db.compare_xml_files(f'/usr/share/dacco-common/dictionaries/cateng/{file_name}',
                                                       f'/tmp/cateng/{file_name}'))

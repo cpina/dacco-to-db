@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import glob
 import os
+import shutil
 import string
 import subprocess
 import tempfile
@@ -72,7 +73,7 @@ def generate_output(output_directory, letter, session):
     file_name = f'{letter}.dic'
     with open(os.path.join(output_directory, file_name), 'w') as f:
         if file_name == 'a.dic':
-            # a.dic in cateng has a diffrent header
+            # a.dic in cateng has a different header
             f.write('''<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE dictionary SYSTEM "dic.dtd">
             <dictionary xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="file:///C:/Documents%20and%20Settings/James/My%20Documents/My%20Projects/dacco%20projects/Publisher/input/cateng/dic.xsd">\n''')
         else:
@@ -87,10 +88,15 @@ def generate_output(output_directory, letter, session):
 
 def main():
     session = create_database_session()
+    output_directory = '/tmp/cateng'
 
     for letter in string.ascii_lowercase:
         dacco_file_to_db(f'/usr/share/dacco-common/dictionaries/cateng/{letter}.dic', session)
-        generate_output('/tmp/cateng', f'{letter}.dic', session)
+        generate_output(output_directory, letter, session)
+
+    print('See sqlite file in dacco.db')
+    print(f'See output of XMLs after the SQL in {output_directory}')
+    print('Execute unit test with python3 test_dacco-to-db.py')
 
 
 def canonical_xml(file1):
@@ -135,6 +141,7 @@ def canonical_xml(file1):
 
 
 def compare_xml_files(file1, file2):
+    shutil.copy('/usr/share/dacco-common/dictionaries/cateng/dic.dtd', '/tmp/cateng')
     canonical_xml_file1 = canonical_xml(file1)
     canonical_xml_file2 = canonical_xml(file2)
 
