@@ -10,8 +10,15 @@ cd dacco-to-db/
 python3 -m virtualenv venv
 . venv/bin/activate
 python3 -m pip install -r requirements.txt
-python3 main.py
+python3 dacco_to_db.py
 
 # See the result:
 sqlitebrowser --table entries dacco.db
 ```
+
+# Notes
+This can be used to generate the canonical form of XML:
+```sh
+$ xmlstarlet canonic file.dic
+```
+For example, attributes are sorted equally.
