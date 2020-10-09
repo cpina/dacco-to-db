@@ -16,9 +16,3 @@ python3 dacco_to_db.py
 sqlitebrowser --table entries dacco.db
 ```
 
-# Notes
-This can be used to generate the canonical form of XML:
-```sh
-$ xmlstarlet canonic file.dic
-```
-For example, attributes are sorted equally.
