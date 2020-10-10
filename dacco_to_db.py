@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import argparse
 import glob
 import os
 import string
@@ -26,14 +27,16 @@ class Entry(Base):
         return f'{self.entry}'
 
 
-def create_database_session():
-    file_name = 'dacco.db'
+def delete_database(db_file_path):
+    file_name = db_file_path
     try:
         os.unlink(file_name)
     except FileNotFoundError:
         pass
 
-    engine = sqlalchemy.create_engine(f'sqlite:///{file_name}')
+
+def open_database(db_file_path):
+    engine = sqlalchemy.create_engine(f'sqlite:///{db_file_path}')
 
     Base.metadata.create_all(engine)
 
@@ -85,22 +88,57 @@ def generate_output(output_directory, session):
     os.makedirs(output_directory, exist_ok=True)
 
     for letter in string.ascii_lowercase:
-        generate_output_for_letter('/tmp/cateng', letter, session)
+        generate_output_for_letter(output_directory, letter, session)
 
 
-def main():
-    session = create_database_session()
-    output_directory = '/tmp/cateng'
+# def main():
+#     session = open_database()
+#     output_directory = '/tmp/cateng'
+#
+#     for letter in string.ascii_lowercase:
+#         dacco_file_to_db(f'/usr/share/dacco-common/dictionaries/cateng/{letter}.dic', session)
+#
+#     generate_output(output_directory, session)
+#
+#     print('See sqlite file in dacco.db')
+#     print(f'See output of XMLs after the SQL in {output_directory}')
+#     print('Execute unit test with python3 test_dacco-to-db.py')
+
+
+def xml_to_db(xml_directory_path, db_destination_path):
+    delete_database(db_destination_path)
+    session = open_database(db_destination_path)
 
     for letter in string.ascii_lowercase:
-        dacco_file_to_db(f'/usr/share/dacco-common/dictionaries/cateng/{letter}.dic', session)
+        file = os.path.join(xml_directory_path, 'cateng', f'{letter}.dic')
+        dacco_file_to_db(file, session)
 
-    generate_output(output_directory, session)
 
-    print('See sqlite file in dacco.db')
-    print(f'See output of XMLs after the SQL in {output_directory}')
-    print('Execute unit test with python3 test_dacco-to-db.py')
+def db_to_xml(db_source_path, xml_directory_path):
+    session = open_database(db_source_path)
+
+    generate_output(xml_directory_path, session)
 
 
 if __name__ == '__main__':
-    main()
+    main_parser = argparse.ArgumentParser()
+
+    subparsers = main_parser.add_subparsers(dest='action', required=True)
+
+    xml_to_db_parser = subparsers.add_parser('xml-to-db')
+    xml_to_db_parser.add_argument('--xml-directory',
+                                  help='Directory to read the DACCO XML files from. Defaults to /usr/share/dacco-common/dictionaries/',
+                                  default='/usr/share/dacco-common/dictionaries/')
+    xml_to_db_parser.add_argument('db_destination',
+                                  help='sqlite3 filename where the output will be saved to. It is overwritten')
+
+    db_to_xml_parser = subparsers.add_parser('db-to-xml')
+    db_to_xml_parser.add_argument('db', help='sqlite3 filename of the database to output')
+    db_to_xml_parser.add_argument('output_directory', help='Directory where the files will be saved')
+
+    args = main_parser.parse_args()
+
+    if args.action == 'xml-to-db':
+        xml_to_db(args.xml_directory, args.db_destination)
+    elif args.action == 'db-to-xml':
+        db_to_xml(args.db, args.output_directory)

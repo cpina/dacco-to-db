@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import shutil
 import string
 import subprocess
@@ -11,16 +12,23 @@ import dacco_to_db
 
 
 class TestDacco_to_db(unittest.TestCase):
+    def setUp(self):
+        self._temporary_directory = tempfile.TemporaryDirectory(prefix='dacco_to_db')
+
     @parameterized.expand(string.ascii_lowercase)
     def test_generate_output(self, letter):
-        session = dacco_to_db.create_database_session()
+        db_file = tempfile.NamedTemporaryFile(delete=False)
+        db_file.close()
+
+        session = dacco_to_db.open_database(db_file.name)
+
         file_name = f'{letter}.dic'
         dacco_to_db.dacco_file_to_db(f'/usr/share/dacco-common/dictionaries/cateng/{file_name}', session)
 
-        dacco_to_db.generate_output_for_letter('/tmp/cateng', letter, session)
+        dacco_to_db.generate_output_for_letter(self._temporary_directory.name, letter, session)
 
-        self.assertTrue(compare_xml_files(f'/usr/share/dacco-common/dictionaries/cateng/{file_name}',
-                                          f'/tmp/cateng/{file_name}'))
+        self.assertTrue(compare_dacco_file_to_generated(f'/usr/share/dacco-common/dictionaries/cateng/{file_name}',
+                                                        os.path.join(self._temporary_directory.name, file_name)))
 
 
 def canonical_xml(file1):
@@ -64,8 +72,15 @@ def canonical_xml(file1):
         return canonicalized
 
 
+def compare_dacco_file_to_generated(dacco_file, generated_file):
+    base_dacco_directory, _ = os.path.split(dacco_file)
+    base_destination_directory, _ = os.path.split(generated_file)
+
+    shutil.copy(os.path.join(base_dacco_directory, 'dic.dtd'), base_destination_directory)
+    return compare_xml_files(dacco_file, generated_file)
+
+
 def compare_xml_files(file1, file2):
-    shutil.copy('/usr/share/dacco-common/dictionaries/cateng/dic.dtd', '/tmp/cateng')
     canonical_xml_file1 = canonical_xml(file1)
     canonical_xml_file2 = canonical_xml(file2)
 

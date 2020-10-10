@@ -2,3 +2,4 @@
 /dacco.db
 /.idea/
 /__pycache__/
+*.db
