@@ -16,7 +16,7 @@ class TestDacco_to_db(unittest.TestCase):
         self._temporary_directory = tempfile.TemporaryDirectory(prefix='dacco_to_db')
 
     @parameterized.expand(string.ascii_lowercase)
-    def test_generate_output(self, letter):
+    def test_roundtrip_xml_to_db_to_xml(self, letter):
         db_file = tempfile.NamedTemporaryFile(delete=False)
         db_file.close()
 
