@@ -70,13 +70,8 @@ def generate_output_for_letter(output_directory, letter, session):
     result = session.query(Entry).filter(Entry.original_file.ilike(f'{letter}.dic')).order_by(Entry.id)
     file_name = f'{letter}.dic'
     with open(os.path.join(output_directory, file_name), 'w') as f:
-        if file_name == 'a.dic':
-            # a.dic in cateng has a different header
-            f.write('''<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE dictionary SYSTEM "dic.dtd">
-            <dictionary xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="file:///C:/Documents%20and%20Settings/James/My%20Documents/My%20Projects/dacco%20projects/Publisher/input/cateng/dic.xsd">\n''')
-        else:
-            f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
-            f.write('<dictionary>\n')
+        f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+        f.write('<dictionary>\n')
 
         for row in result:
             f.write(row.xml)
